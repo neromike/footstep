@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<title>Footsteps</title>
+</head>
+
+<style>
+* {
+	padding: 0px;
+	margin: 0px;
+	user-select: none; /* supported by Chrome and Opera */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	-webkit-touch-callout: none;
+}
+body {
+	overflow: hidden;
+}
+.hidden_img {
+	display: none;
+}
+#myCanvas {
+	margin: auto;
+	position:  absolute;
+	top: 0px;
+	left: 0px;
+}
+</style>
+
+<body>
+<img id="background_img" class="hidden_img" src="parchment.jpg" />
+<img id="footprint_human_R" class="hidden_img" src="footprint_human_R.png" />
+<img id="footprint_human_L" class="hidden_img" src="footprint_human_L.png" />
+<img id="footprint_demon_R" class="hidden_img" src="footprint_demon_R.png" />
+<img id="footprint_demon_L" class="hidden_img" src="footprint_demon_L.png" />
+<canvas id="myCanvas"></canvas>
+</body>
+
+<script>
+const canvas = document.getElementById('myCanvas')
+const context = canvas.getContext('2d')
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
+var background_img = document.getElementById("background_img")
+var footprint_img_L = {}
+var footprint_img_R = {}
+footprint_img_L['human'] = { 'image': document.getElementById("footprint_human_L"), 'width': 10, 'length': 25 }
+footprint_img_R['human'] = { 'image': document.getElementById("footprint_human_R"), 'width': 10, 'length': 25 }
+footprint_img_L['demon'] = { 'image': document.getElementById("footprint_demon_L"), 'width': 24, 'length': 42 }
+footprint_img_R['demon'] = { 'image': document.getElementById("footprint_demon_R"), 'width': 24, 'length': 50 }
+
+// get touch and click events
+document.addEventListener('mousedown', setPosition)
+document.addEventListener('mousemove', setPosition)
+document.addEventListener('mouseup', setPosition)
+document.addEventListener('touchstart', setPosition)
+document.addEventListener('touchmove', setPosition)
+document.addEventListener('touchend', setPosition)
+var button_down = false
+var new_x
+var new_y
+function setPosition(e) {
+	if (e.type == "mousedown" || e.type == "touchstart") {
+		button_down = true
+	} else if (e.type == "mouseup" || e.type == "touchend") {
+		button_down = false
+	}
+	
+	if (button_down) {
+		if (e.type == "touchstart" || e.type == "touchmove" || e.type == "touchend") {
+			new_x = e.touches[0].clientX
+			new_y = e.touches[0].clientY
+		} else if (e.type == "mousedown" || e.type == "mousemove" || e.type == "mouseup"){
+			new_x = e.clientX
+			new_y = e.clientY
+		}
+	}
+}
+
+//Player data
+const MAX_ANGLE_CHANGE = (Math.PI / 2) / 9
+const MIN_ANGLE_CHANGE = 5 * (Math.PI / 2) / 90
+class Player {
+	constructor(x, y, angle, species) {
+		this.x = x
+		this.y = y
+		this.angle = angle
+		this.speed = 2
+		this.species = species
+		this.footprint_log = []
+		this.last_footprint = 'L'
+		this.last_x_drawn = -100
+		this.last_y_drawn = -100
+		this.stride = 25
+		this.footprint_decay = 1000
+	}
+	draw_foot () {
+		// set the coordinates and images for the side being drawn
+		let this_x, this_y, this_footprint
+		if (this.last_footprint == 'R') {
+			this_footprint = footprint_img_L[this.species]
+			this_x = this.x + this_footprint['width'] * Math.sin(Math.PI - this.angle)
+			this_y = this.y + this_footprint['width'] * Math.cos(Math.PI - this.angle)
+			
+			this.last_footprint = 'L'
+		} else {
+			this_footprint = footprint_img_R[this.species]
+			this_x = this.x - this_footprint['width'] * Math.sin(Math.PI - this.angle)
+			this_y = this.y - this_footprint['width'] * Math.cos(Math.PI - this.angle)
+			this.last_footprint = 'R'
+		}
+		
+		// add the footprint to the log
+		this.footprint_log.push({
+			x: this_x,
+			y: this_y,
+			angle: this.angle,
+			image: this_footprint['image'],
+			image_width: this_footprint['width'],
+			image_height: this_footprint['length'],
+			alpha: 1.0,
+			timestamp: Date.now()
+		})
+	}
+}
+player = []
+player.push(new Player(100, 100, 0, 'human'))	// Add the user-controlled player, player[0]
+
+function draw_image(x, y, angle, image, image_width, image_height, alpha) {
+	// Draw an image at a given position and angle
+	context.save()
+	context.translate(x, y)
+	context.rotate((90 * Math.PI / 180) + angle)
+	context.globalAlpha = alpha
+	context.drawImage(image, - image_width / 2, - image_height / 2, image_width, image_height)
+	context.restore()
+}
+
+function getDistance(x1, y1, x2, y2){ return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)); }
+
+function getNewAngle(old_angle, new_angle) {
+	let new_player_angle = old_angle
+	
+	// fixes quadrant issue
+	if ((old_angle <= -Math.PI/2) && (new_angle >= Math.PI/2)) {
+		old_angle += Math.PI * 2
+	}
+	if ((old_angle >= Math.PI/2) && (new_angle <= -Math.PI/2)) {
+		old_angle -= Math.PI * 2
+	}
+	
+	// updates the player angle
+	if (new_angle < old_angle) {
+		if ((old_angle - new_angle) > MAX_ANGLE_CHANGE) {
+			new_player_angle -= MAX_ANGLE_CHANGE
+		} else {
+			new_player_angle -= new_angle - old_angle
+		}
+	} else if (new_angle > old_angle) {
+		if ((new_angle - old_angle) > MAX_ANGLE_CHANGE) {
+			new_player_angle += MAX_ANGLE_CHANGE
+		} else {
+			new_player_angle += new_angle - old_angle
+		}
+	}
+	
+	// get rid of wooble, no minor angle changes
+	if (Math.abs(old_angle - new_angle) <= MIN_ANGLE_CHANGE) {
+		new_player_angle = old_angle
+	}
+	
+	// normalize the player angle: -pi to pi
+	if (new_player_angle < -Math.PI) {
+		new_player_angle += 2 * Math.PI
+	}
+	if (new_player_angle > Math.PI) {
+		new_player_angle -= 2 * Math.PI
+	}
+	
+	return new_player_angle
+}
+
+function update() {
+	if (button_down) {
+		new_angle = Math.atan2(new_y - player[0].y, new_x - player[0].x)
+		old_angle = player[0].angle
+		
+		player[0].angle = getNewAngle(old_angle, new_angle)
+		
+		distance = getDistance(player[0].x, player[0].y, new_x, new_y)
+		if (distance > footprint_img_L[player[0].species]['length']) {
+			if (distance > player[0].speed) {
+				distance = player[0].speed
+			}
+			
+			player[0].x += Math.cos(player[0].angle) * distance
+			player[0].y += Math.sin(player[0].angle) * distance
+		}
+	}
+	
+	// remove old footprints and transparencies of existing foorptints in log
+	for (let player_num=0; player_num<player.length; player_num++) {
+		for (let i=0; i<player[player_num].footprint_log.length; i++) {
+			let time_diff = Date.now() - player[player_num].footprint_log[i].timestamp
+			
+			player[player_num].footprint_log[i].alpha = 1 - (time_diff / player[player_num].footprint_decay)
+			
+			if (time_diff > player[player_num].footprint_decay) {
+				player[player_num].footprint_log.splice(i, 1)
+			}
+		}
+		
+		// Check if we have to draw a new footprint
+		if (getDistance(player[player_num].x, player[player_num].y, player[player_num].last_x_drawn, player[player_num].last_y_drawn) > player[player_num].stride) {
+			player[player_num].draw_foot()
+			player[player_num].last_x_drawn = player[player_num].x
+			player[player_num].last_y_drawn = player[player_num].y
+		}
+		
+		if (player[player_num].y > (canvas.height / 2)) { 
+			player[player_num].species = 'demon'
+			player[player_num].speed = 10
+			player[player_num].stride = 40
+			player[player_num].footprint_decay = 500
+		} else {
+			player[player_num].species = 'human'
+			player[player_num].speed = 2
+			player[player_num].stride = 25
+			player[player_num].footprint_decay = 1000
+		}
+		
+		
+	}
+}
+
+
+function draw() {
+	// clear the screen
+	context.fillStyle = context.createPattern(background_img, 'repeat')
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	
+	// Iterate through the draw log and sends each one out to draw
+	for (item of player[0].footprint_log) {
+		draw_image(item.x, item.y, item.angle, item.image, item.image_width, item.image_height, item.alpha)
+	}
+}
+
+function loop() {
+	update()
+	draw()
+	window.requestAnimationFrame(loop)
+}
+
+window.requestAnimationFrame(loop)
+
+</script>
+</html>
