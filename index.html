@@ -218,46 +218,48 @@ function update() {
 	}
 	
 	// Move AI characters
-	player[1].x += AI_dir_x
-	player[1].y += AI_dir_y
-	if (player[1].x < 0 || player[1].x > canvas.width || player[1].y < 0 || player[1].y > canvas.height ) {
-		let this_species = Math.random()
-		if (this_species < 0.2) {
-			player[1].species = 'human'
-		} else if (this_species < 0.4) {
-			player[1].species = 'demon'
-		} else if (this_species < 0.6) {
-			player[1].species = 'boot'
-		} else if (this_species < 0.8) {
-			player[1].species = 'bird'
-		} else {
-			player[1].species = 'bare'
-		}
-		let this_dir = Math.random()
-		if (this_dir < 0.25) { // right
-			player[1].x = 1
-			player[1].y = Math.random() * canvas.height
-			player[1].angle = 0
-			AI_dir_x = (Math.random() * 3) + 1
-			AI_dir_y = (Math.random() * 2) - 1
-		} else if (this_dir < 0.5) {	// left
-			player[1].x = canvas.width - 1
-			player[1].y = Math.random() * canvas.height
-			player[1].angle = -Math.PI
-			AI_dir_x = - ((Math.random() * 3) + 1)
-			AI_dir_y = (Math.random() * 2) - 1
-		} else if (this_dir < 0.75) {	// up
-			player[1].x = Math.random() * canvas.width
-			player[1].y = canvas.height - 1
-			player[1].angle = -Math.PI / 2
-			AI_dir_x = (Math.random() * 2) - 1
-			AI_dir_y = - ((Math.random() * 3) + 1)
-		} else {	// down
-			player[1].x = Math.random() * canvas.width
-			player[1].y = 1
-			player[1].angle = Math.PI / 2
-			AI_dir_x = (Math.random() * 2) - 1
-			AI_dir_y = (Math.random() * 3) + 1
+	if (player.length > 1) {
+		player[1].x += AI_dir_x
+		player[1].y += AI_dir_y
+		if (player[1].x < 0 || player[1].x > canvas.width || player[1].y < 0 || player[1].y > canvas.height ) {
+			let this_species = Math.random()
+			if (this_species < 0.2) {
+				player[1].species = 'human'
+			} else if (this_species < 0.4) {
+				player[1].species = 'demon'
+			} else if (this_species < 0.6) {
+				player[1].species = 'boot'
+			} else if (this_species < 0.8) {
+				player[1].species = 'bird'
+			} else {
+				player[1].species = 'bare'
+			}
+			let this_dir = Math.random()
+			if (this_dir < 0.25) { // right
+				player[1].x = 1
+				player[1].y = Math.random() * canvas.height
+				player[1].angle = 0
+				AI_dir_x = (Math.random() * 3) + 1
+				AI_dir_y = (Math.random() * 2) - 1
+			} else if (this_dir < 0.5) {	// left
+				player[1].x = canvas.width - 1
+				player[1].y = Math.random() * canvas.height
+				player[1].angle = -Math.PI
+				AI_dir_x = - ((Math.random() * 3) + 1)
+				AI_dir_y = (Math.random() * 2) - 1
+			} else if (this_dir < 0.75) {	// up
+				player[1].x = Math.random() * canvas.width
+				player[1].y = canvas.height - 1
+				player[1].angle = -Math.PI / 2
+				AI_dir_x = (Math.random() * 2) - 1
+				AI_dir_y = - ((Math.random() * 3) + 1)
+			} else {	// down
+				player[1].x = Math.random() * canvas.width
+				player[1].y = 1
+				player[1].angle = Math.PI / 2
+				AI_dir_x = (Math.random() * 2) - 1
+				AI_dir_y = (Math.random() * 3) + 1
+			}
 		}
 	}
 	
