@@ -47,13 +47,14 @@ body {
 </body>
 
 <script>
+'use strict'
 const canvas = document.getElementById('myCanvas')
 const context = canvas.getContext('2d')
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
-var background_img = document.getElementById("background_img")
-var footprint_img_L = {}
-var footprint_img_R = {}
+let background_img = document.getElementById("background_img")
+let footprint_img_L = {}
+let footprint_img_R = {}
 footprint_img_L['human'] = { 'image': document.getElementById("footprint_human_L"), 'width': 10, 'length': 25 }
 footprint_img_R['human'] = { 'image': document.getElementById("footprint_human_R"), 'width': 10, 'length': 25 }
 footprint_img_L['bare'] = { 'image': document.getElementById("footprint_bare_L"), 'width': 9, 'length': 23 }
@@ -72,9 +73,9 @@ document.addEventListener('mouseup', setPosition)
 document.addEventListener('touchstart', setPosition)
 document.addEventListener('touchmove', setPosition)
 document.addEventListener('touchend', setPosition)
-var button_down = false
-var new_x
-var new_y
+let button_down = false
+let new_x
+let new_y
 function setPosition(e) {
 	if (e.type == "mousedown" || e.type == "touchstart") {
 		button_down = true
@@ -139,11 +140,11 @@ class Player {
 		})
 	}
 }
-player = []
+let player = []
 player.push(new Player(100, 100, 0, 'human'))	// Add the user-controlled player, player[0]
 player.push(new Player(20, canvas.height - 100, 0, 'bird'))
-AI_dir_x = 1
-AI_dir_y = 0
+let AI_dir_x = 1
+let AI_dir_y = 0
 
 function draw_image(x, y, angle, image, image_width, image_height, alpha) {
 	// Draw an image at a given position and angle
@@ -201,12 +202,12 @@ function getNewAngle(old_angle, new_angle) {
 
 function update() {
 	if (button_down) {
-		new_angle = Math.atan2(new_y - player[0].y, new_x - player[0].x)
-		old_angle = player[0].angle
+		let new_angle = Math.atan2(new_y - player[0].y, new_x - player[0].x)
+		let old_angle = player[0].angle
 		
 		player[0].angle = getNewAngle(old_angle, new_angle)
 		
-		distance = getDistance(player[0].x, player[0].y, new_x, new_y)
+		let distance = getDistance(player[0].x, player[0].y, new_x, new_y)
 		if (distance > footprint_img_L[player[0].species]['length']) {
 			if (distance > player[0].speed) {
 				distance = player[0].speed
@@ -318,7 +319,7 @@ function draw() {
 	
 	// Iterate through the draw log and sends each one out to draw
 	for (let player_num=0; player_num<player.length; player_num++) {
-		for (item of player[player_num].footprint_log) {
+		for (let item of player[player_num].footprint_log) {
 			draw_image(item.x, item.y, item.angle, item.image, item.image_width, item.image_height, item.alpha)
 		}
 	}
