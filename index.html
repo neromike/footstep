@@ -66,7 +66,7 @@ footprint_img_R['demon'] = { 'image': document.getElementById("footprint_demon_R
 footprint_img_L['bird'] = { 'image': document.getElementById("footprint_bird_L"), 'width': 10, 'length': 19 }
 footprint_img_R['bird'] = { 'image': document.getElementById("footprint_bird_R"), 'width': 10, 'length': 19 }
 
-// get touch and click events
+// Get touch and click events
 document.addEventListener('mousedown', setPosition)
 document.addEventListener('mousemove', setPosition)
 document.addEventListener('mouseup', setPosition)
@@ -94,7 +94,7 @@ function setPosition(e) {
 	}
 }
 
-//Player data
+// Player data
 const MAX_ANGLE_CHANGE = (Math.PI / 2) / 9
 const MIN_ANGLE_CHANGE = 5 * (Math.PI / 2) / 90
 class Player {
@@ -112,7 +112,7 @@ class Player {
 		this.footprint_decay = 1000
 	}
 	draw_foot () {
-		// set the coordinates and images for the side being drawn
+		// Set the coordinates and images for the side being drawn
 		let this_x, this_y, this_footprint
 		if (this.last_footprint == 'R') {
 			this_footprint = footprint_img_L[this.species]
@@ -127,7 +127,7 @@ class Player {
 			this.last_footprint = 'R'
 		}
 		
-		// add the footprint to the log
+		// Add the footprint to the log
 		this.footprint_log.push({
 			x: this_x,
 			y: this_y,
@@ -141,6 +141,8 @@ class Player {
 	}
 }
 let player = []
+
+// Set up the player
 player.push(new Player(100, 100, 0, 'human'))	// Add the user-controlled player, player[0]
 player.push(new Player(20, canvas.height - 100, 0, 'bird'))
 let AI_dir_x = 1
@@ -156,12 +158,12 @@ function draw_image(x, y, angle, image, image_width, image_height, alpha) {
 	context.restore()
 }
 
-function getDistance(x1, y1, x2, y2){ return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)); }
+function getDistance(x1, y1, x2, y2) { return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)); }
 
 function getNewAngle(old_angle, new_angle) {
 	let new_player_angle = old_angle
 	
-	// fixes quadrant issue
+	// Fixes quadrant issue
 	if ((old_angle <= -Math.PI/2) && (new_angle >= Math.PI/2)) {
 		old_angle += Math.PI * 2
 	}
@@ -169,7 +171,7 @@ function getNewAngle(old_angle, new_angle) {
 		old_angle -= Math.PI * 2
 	}
 	
-	// updates the player angle
+	// Updates the player angle
 	if (new_angle < old_angle) {
 		if ((old_angle - new_angle) > MAX_ANGLE_CHANGE) {
 			new_player_angle -= MAX_ANGLE_CHANGE
@@ -184,12 +186,12 @@ function getNewAngle(old_angle, new_angle) {
 		}
 	}
 	
-	// get rid of wooble, no minor angle changes
+	// Get rid of wooble, no minor angle changes
 	if (Math.abs(old_angle - new_angle) <= MIN_ANGLE_CHANGE) {
 		new_player_angle = old_angle
 	}
 	
-	// normalize the player angle: -pi to pi
+	// Normalize the player angle: -pi to pi
 	if (new_player_angle < -Math.PI) {
 		new_player_angle += 2 * Math.PI
 	}
@@ -200,7 +202,7 @@ function getNewAngle(old_angle, new_angle) {
 	return new_player_angle
 }
 
-function update() {
+function update_user_info() {
 	if (button_down) {
 		let new_angle = Math.atan2(new_y - player[0].y, new_x - player[0].x)
 		let old_angle = player[0].angle
@@ -217,8 +219,9 @@ function update() {
 			player[0].y += Math.sin(player[0].angle) * distance
 		}
 	}
-	
-	// Move AI characters
+}
+
+function update_AI_players() {
 	if (player.length > 1) {
 		player[1].x += AI_dir_x
 		player[1].y += AI_dir_y
@@ -263,11 +266,12 @@ function update() {
 			}
 		}
 	}
-	
-	// Footprint maintenance
+}
+
+function update_footprint_maintenance() {
 	for (let player_num=0; player_num<player.length; player_num++) {
 		
-		// remove old footprints and transparencies of existing foorptints in log
+		// Remove old footprints and transparencies of existing foorptints in log
 		for (let i=0; i<player[player_num].footprint_log.length; i++) {
 			let time_diff = Date.now() - player[player_num].footprint_log[i].timestamp
 			
@@ -278,14 +282,20 @@ function update() {
 			}
 		}
 		
-		// check if we have to draw a new footprint
+		// Check if we have to draw a new footprint
 		if (getDistance(player[player_num].x, player[player_num].y, player[player_num].last_x_drawn, player[player_num].last_y_drawn) > player[player_num].stride) {
 			player[player_num].draw_foot()
 			player[player_num].last_x_drawn = player[player_num].x
 			player[player_num].last_y_drawn = player[player_num].y
 		}
 		
-		// switch player between human and demon
+	}
+}
+
+function update_player_actions() {
+	for (let player_num=0; player_num<player.length; player_num++) {
+		
+		// Switch player footprint types
 		if (player[0].x < 50 && player[0].y < 50) {
 			player[0].species = 'human'
 			player[0].speed = 2
@@ -311,9 +321,8 @@ function update() {
 	}
 }
 
-
 function draw() {
-	// clear the screen
+	// Clear the screen
 	context.fillStyle = context.createPattern(background_img, 'repeat')
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	
@@ -326,7 +335,10 @@ function draw() {
 }
 
 function loop() {
-	update()
+	update_user_info()
+	update_AI_players()
+	update_footprint_maintenance()
+	update_player_actions()
 	draw()
 	window.requestAnimationFrame(loop)
 }
