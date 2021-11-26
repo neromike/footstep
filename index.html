@@ -43,6 +43,7 @@ body {
 <img id="footprint_demon_L" class="hidden_img" src="img/footprint_demon_L.png" />
 <img id="footprint_bird_R" class="hidden_img" src="img/footprint_bird_R.png" />
 <img id="footprint_bird_L" class="hidden_img" src="img/footprint_bird_L.png" />
+<img id="bomb_img" class="hidden_img" src="img/bomb.png" />
 <canvas id="myCanvas"></canvas>
 </body>
 
@@ -65,6 +66,9 @@ footprint_img_L['demon'] = { 'image': document.getElementById("footprint_demon_L
 footprint_img_R['demon'] = { 'image': document.getElementById("footprint_demon_R"), 'width': 24, 'length': 50 }
 footprint_img_L['bird'] = { 'image': document.getElementById("footprint_bird_L"), 'width': 10, 'length': 19 }
 footprint_img_R['bird'] = { 'image': document.getElementById("footprint_bird_R"), 'width': 10, 'length': 19 }
+
+let obj_img = {}
+obj_img['bomb'] = {'image': document.getElementById("bomb_img"), 'width': 30, 'length': 25, 'alpha': 1.0 }
 
 // Get touch and click events
 document.addEventListener('mousedown', setPosition)
@@ -142,11 +146,27 @@ class Player {
 }
 let player = []
 
+// Item data
+class Item {
+	constructor(x, y, angle, label) {
+		this.x = x
+		this.y = y
+		this.angle = angle
+		this.label = label
+	}
+}
+let item = []
+
 // Set up the player
 player.push(new Player(100, 100, 0, 'human'))	// Add the user-controlled player, player[0]
-player.push(new Player(20, canvas.height - 100, 0, 'bird'))
-let AI_dir_x = 1
-let AI_dir_y = 0
+
+// Add a bomb
+item.push(new Item(200, 200, 3*Math.PI/2, 'bomb'))	// Add a bomb
+
+// Add an AI
+//player.push(new Player(20, canvas.height - 100, 0, 'bird'))
+//let AI_dir_x = 1
+//let AI_dir_y = 0
 
 function draw_image(x, y, angle, image, image_width, image_height, alpha) {
 	// Draw an image at a given position and angle
@@ -326,11 +346,16 @@ function draw() {
 	context.fillStyle = context.createPattern(background_img, 'repeat')
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	
-	// Iterate through the draw log and sends each one out to draw
+	// Iterate through the footprint draw log and sends each one out to draw
 	for (let player_num=0; player_num<player.length; player_num++) {
 		for (let item of player[player_num].footprint_log) {
 			draw_image(item.x, item.y, item.angle, item.image, item.image_width, item.image_height, item.alpha)
 		}
+	}
+	
+	// Iterate through the items are draw them
+	for (let item_num=0; item_num<item.length; item_num++) {
+		draw_image(item[item_num].x, item[item_num].y, item[item_num].angle, obj_img[item[item_num].label].image, obj_img[item[item_num].label].width, obj_img[item[item_num].label].length, obj_img[item[item_num].label].alpha)
 	}
 }
 
